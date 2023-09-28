@@ -1,0 +1,7 @@
+.cache/
+data/
+models/
+__pycache__/
+*.ipynb
+*.json
+wandb_config.sh
