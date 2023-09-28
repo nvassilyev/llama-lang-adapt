@@ -35,11 +35,6 @@ def train():
     validation_file = "../african-plm/data/mlm/yo/eval.txt"
     output_dir = "models/llama-2-yoruba"
     cache_dir = ".cache"
-
-    os.environ["WANDB_API_KEY"] = '8c1bd48d33538f11315cd7578c4954f1713febce'
-    os.environ['WANDB_ENTITY']='nvassilyev'
-    os.environ["WANDB_PROJECT"] = "lang-adapt"
-    os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
     
     gradient_accumulation_steps = batch_size // micro_batch_size
 
