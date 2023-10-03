@@ -4,6 +4,7 @@ from generate import generate_text
 from tqdm import tqdm
 from sklearn import metrics
 import torch
+import argparse
 
 def generate_user_prompt(sample, labels, include_text=True):
     headline = f'Headline: {sample["headline"]}'
@@ -18,18 +19,15 @@ def generate_user_prompt(sample, labels, include_text=True):
     return prompt
 
 
-def main():
-    base_model = "../models/llama-2-7b-chat-hf"
-
-    tokenizer = LlamaTokenizer.from_pretrained(base_model)
+def main(data, model):
+    tokenizer = LlamaTokenizer.from_pretrained(model)
     model = LlamaForCausalLM.from_pretrained(
-                base_model,
+                model,
                 torch_dtype=torch.float16,
                 device_map="auto",
             )
 
-
-    dataset = load_dataset("csv", data_files={"test": "test.tsv"}, delimiter="\t")['test']
+    dataset = load_dataset("csv", data_files={"test": data}, delimiter="\t")['test']
     dataset = dataset.shuffle(seed=42)
 
     labels = [
@@ -39,12 +37,14 @@ def main():
         "religion",
         "sports"
     ]
+    language = "Yoruba"
 
-    system_prompt = "Given a Yoruba news article with its headline and text, along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
-    system_prompt_no_text = "Given a Yoruba news article with its headline along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
+    system_prompt = f"Given a {language} news article with its headline and text, along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
+    system_prompt_no_text = f"Given a {language} news article with its headline along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
 
-    accuracy = [[], []]
-    accuracy_no_text = [[], []]
+    accuracy = [[], 0]
+    accuracy_no_text = [[], 0]
+    references = []
 
     for i in tqdm(range(len(dataset))):
         user_message = generate_user_prompt(dataset[i], labels)
@@ -63,16 +63,31 @@ def main():
             if output_no_text and label in output_no_text.lower():
                 prediction_no_text.append(label)
 
-        if len(prediction) == 1:
+        if len(prediction) > 0:
             accuracy[0].append(prediction[0])
-            accuracy[1].append(dataset[i]['category'])
+        else:
+            accuracy[0].append("confused")
+            accuracy[1] += 1
+            # print(output)
 
-        if len(prediction_no_text) == 1:
+        if len(prediction_no_text) > 0:
             accuracy_no_text[0].append(prediction_no_text[0])
-            accuracy_no_text[1].append(dataset[i]['category'])
+        else:
+            accuracy_no_text[0].append("confused")
+            accuracy_no_text[1] += 1
+            # print(output_no_text)
+        
+        references.append(dataset[i]['category'])
     
-    print(f"Accuracy: {metrics.f1_score(accuracy[1], accuracy[0], average='macro')}")
-    print(f"Accuracy (headline only): {metrics.f1_score(accuracy_no_text[1], accuracy_no_text[0], average='macro')}")
+    score = metrics.f1_score(references, accuracy[0], average='macro')
+    score_headline = metrics.f1_score(references, accuracy_no_text[0], average='macro')
+    print(f"Accuracy: {score}, confused: {accuracy[1]}")
+    print(f"Accuracy (headline only): {score_headline}, confused: {accuracy_no_text[1]}")
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, help="Path to the data file")
+    parser.add_argument("--model", type=str, help="Path to the model file")
+    args = parser.parse_args()
+    main(data=args.data, model=args.model)

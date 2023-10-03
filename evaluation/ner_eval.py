@@ -79,7 +79,7 @@ def span_f1(targets: list[str], predictions: list[str]) -> float:
 
 
 def main():
-    base_model = "../models/llama-2-7b-chat-hf"
+    base_model = "../models/llm-africa/alpaca/llama2-7b-chat/yor-it-mt/trained_models"
 
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
     model = LlamaForCausalLM.from_pretrained(

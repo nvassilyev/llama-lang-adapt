@@ -4,4 +4,4 @@ models/
 __pycache__/
 *.ipynb
 *.json
-wandb_config.sh
+*.sh
