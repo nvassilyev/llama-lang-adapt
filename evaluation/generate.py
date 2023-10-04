@@ -1,6 +1,9 @@
 from transformers import GenerationConfig, AutoModelForCausalLM, AutoTokenizer
 import torch
 
+LANGS = {
+    "Yoruba": "yor"
+}
 
 if torch.cuda.is_available():
     device = "cuda"

@@ -1,10 +1,11 @@
 import collections
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text
+from generate import generate_text, LANGS
 from tqdm import tqdm
-from sklearn import metrics
 import torch
+import argparse
+import datetime
 
 
 SEED = 42
@@ -78,23 +79,24 @@ def span_f1(targets: list[str], predictions: list[str]) -> float:
   return 100 * span_f1_seqio(targets, predictions)["span_f1"]
 
 
-def main():
-    base_model = "../models/llm-africa/alpaca/llama2-7b-chat/yor-it-mt/trained_models"
+def main(model, language):
+    lang = LANGS[language]
+    data_path = f"data/{lang}/ner/test.jsonl"
 
-    tokenizer = LlamaTokenizer.from_pretrained(base_model)
+    tokenizer = LlamaTokenizer.from_pretrained(model)
     model = LlamaForCausalLM.from_pretrained(
-                base_model,
+                model,
                 torch_dtype=torch.float16,
                 device_map="auto",
             )
 
-    dataset = load_dataset("json", data_files={"test": "data/ner/test.jsonl"})['test']
+    dataset = load_dataset("json", data_files={"test": data_path})['test']
     dataset = dataset.shuffle(seed=SEED)
 
     targets = [dataset[i]['target'] for i in range(len(dataset))]
     predictions = []
 
-    user_message_suffix = "Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the passage above using $$ as a separator. Return only the output."
+    user_message_suffix = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the passage above written in {language} using $$ as a separator. Note that our given example is in English but you must perform the same on {language} text. Return only the output."
     system_prompt = "Follow the instructions below and answer to the best of your ability."
 
     for i in tqdm(range(len(dataset))):
@@ -110,4 +112,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print("-" * 20)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, help="Path to the model file")
+    parser.add_argument("--lang", type=str, help="Language")
+    args = parser.parse_args()
+
+    print(f"Starting NER Evaluation.\nUsed Model Located At: {args.model}\nStart Time: {str(datetime.datetime.now())}")
+    main(model=args.model, language=args.lang)
+
+    print(f"NER Evaluation Completed. End Time: {str(datetime.datetime.now())}")
+    print("-" * 20)

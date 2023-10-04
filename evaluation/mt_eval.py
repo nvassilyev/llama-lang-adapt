@@ -1,16 +1,19 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text
+from generate import generate_text, LANGS
 from tqdm import tqdm
 import evaluate
 import torch
 import argparse
+import datetime
 
 def extract_prompt(message: str) -> str:
     lines = message.split('Yoruba:')
     return lines[1] if len(lines) > 1 else message
 
-def main(model):
+def main(model, language):
+    lang = LANGS[language]
+
     tokenizer = LlamaTokenizer.from_pretrained(model)
     model = LlamaForCausalLM.from_pretrained(
                 model,
@@ -18,13 +21,11 @@ def main(model):
                 device_map="auto",
             )
 
-
     english = load_dataset("facebook/flores", "eng_Latn")["devtest"]
-    yoruba = load_dataset("facebook/flores", "yor_Latn")["devtest"]
-    system_prompt = "Translate the following sentence from English to Yoruba. Provide no justification, please and thank you!"
+    yoruba = load_dataset("facebook/flores", f"{lang}_Latn")["devtest"]
+    system_prompt = f"Translate the following sentence from English to {language}. Provide no justification, please and thank you!"
 
     predictions, references = [], []
-    print(len(english))
 
     for i in tqdm(range(len(english))):
         user_message = f"English: {english[i]['sentence']}"
@@ -44,7 +45,15 @@ def main(model):
     
 
 if __name__ == "__main__":
+    print("-" * 20)
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, help="Path to the model file")
+    parser.add_argument("--lang", type=str, help="Language")
     args = parser.parse_args()
-    main(model=args.model)
+
+    print(f"Starting Machine Translation Evaluation.\nUsed Model Located At: {args.model}\nStart Time: {str(datetime.datetime.now())}")
+    
+    main(model=args.model, language=args.lang)
+
+    print(f"Machine Translation Evaluation Completed. End Time: {str(datetime.datetime.now())}")
+    print("-" * 20)

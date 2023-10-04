@@ -1,10 +1,11 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text
+from generate import generate_text, LANGS
 from tqdm import tqdm
 from sklearn import metrics
 import torch
 import argparse
+import datetime
 
 def generate_user_prompt(sample, labels):
     text = f'Sample Text: {sample["text"]}'
@@ -18,7 +19,10 @@ def generate_user_prompt(sample, labels):
     return prompt
 
 
-def main(model, data, language="Yoruba"):
+def main(model, language):
+    lang = LANGS[language]
+    data_path = f"data/{lang}/sentiment/test.tsv"
+
     tokenizer = LlamaTokenizer.from_pretrained(model)
     model = LlamaForCausalLM.from_pretrained(
                 model,
@@ -26,8 +30,7 @@ def main(model, data, language="Yoruba"):
                 device_map="auto",
             )
 
-
-    dataset = load_dataset("csv", data_files={"test": data}, delimiter="\t")['test']
+    dataset = load_dataset("csv", data_files={"test": data_path}, delimiter="\t")['test']
     dataset = dataset.shuffle(seed=42)
 
     labels = [
@@ -65,12 +68,19 @@ def main(model, data, language="Yoruba"):
         accuracy[1].append(dataset[i]['label'])
 
     print(f"Num non-guesses: {len(confused_outputs)}")
+    print(f"Total guesses: {len(dataset)}")
     print(f"Confused outputs: {confused_outputs}")
     print(f"Accuracy: {metrics.f1_score(accuracy[1], accuracy[0], average='macro')}")
 
 if __name__ == "__main__":
+    print("-" * 20)    
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, help="Path to the data file")
     parser.add_argument("--model", type=str, help="Path to the model file")
+    parser.add_argument("--lang", type=str, help="Language")
     args = parser.parse_args()
-    main(data=args.data, model=args.model)
+
+    print(f"Starting Sentiment Classification Evaluation.\nUsed Model Located At: {args.model}\nStart Time: {str(datetime.datetime.now())}")
+    main(model=args.model, language=args.lang)
+
+    print(f"Question Sentiment Classifcation Completed. End Time: {str(datetime.datetime.now())}")
+    print("-" * 20)

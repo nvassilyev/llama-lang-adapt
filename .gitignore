@@ -1,7 +1,15 @@
-.cache/
+### Large files (datasets, LLMs)
 data/
 models/
+
+### Python and Transformers (Cache/Libraries)
+env/
 __pycache__/
+.cache/
+
+### Config files
+finetune/wandb_config.sh
+
+### Results and testing files
+evaluation/results/*
 *.ipynb
-*.json
-*.sh
