@@ -1,6 +1,6 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS
+from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt
 from tqdm import tqdm
 from sklearn import metrics
 import torch
@@ -39,17 +39,20 @@ def main(model, language):
         "neutral"
     ]
 
-    system_prompt = f"Given a sample text in {language}, along with a choice of three sentiments, please provide a one-word response that best describes the sentiment of the text. Your answer should be the most appropriate sentiment from the provided options. Make sure your answer includes one of these sentiments."
-    system_prompt2 = f"Please analyze the following sample text in {language} and provide a one-word response that best describes the sentiment of the text. Only output the label NEUTRAL, POSITIVE, or NEGATIVE. Do not output anything else."
+    # system_prompt = f"Given a sample text in {language}, along with a choice of three sentiments, please provide a one-word response that best describes the sentiment of the text. Your answer should be the most appropriate sentiment from the provided options. Make sure your answer includes one of these sentiments."
+    # system_prompt2 = f"Please analyze the following sample text in {language} and provide a one-word response that best describes the sentiment of the text. Only output the label NEUTRAL, POSITIVE, or NEGATIVE. Do not output anything else."
+    system_prompt = get_sys_prompt(language, True)
+    instruction = f"Please analyze the following sample text in {language} and provide a one-word response that best describes the sentiment of the text. Only output one of the labels {str(labels)}. Do not output anything else."
 
     accuracy = [[], []]
     confused_outputs = []
 
-    for i in tqdm(range(10)):
+    for i in tqdm(range(len(dataset))):
         # user_message = generate_user_prompt(dataset[i], labels)
-        user_message = f"SAMPLE TEXT: {dataset[i]['text']}\n SENTIMENT PREDICTION:"
+        # user_message = f"SAMPLE TEXT: {dataset[i]['text']}\n SENTIMENT PREDICTION:"
+        user_message = get_user_prompt(instruction, True, dataset[i]['text'])
 
-        output = generate_text(model, tokenizer, system_prompt=system_prompt2,
+        output = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message, max_new_tokens=40)
 
         prediction = []

@@ -5,6 +5,7 @@ declare -A language_list=( ["Yoruba"]="yor")
 
 # Edit the models you wish to test. Should be a relative directory pointing to your model.
 models=(
+    "/mnt/disk/llama-lang-adapt/models/llama-2-7b-hf"
     "/mnt/disk/llama-lang-adapt/models/llama-2-7b-chat-hf"
 )
 

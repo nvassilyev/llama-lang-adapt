@@ -10,6 +10,18 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
+def get_sys_prompt(language: str, has_input: bool) -> str:
+    if has_input:
+        return f"Below is an instruction that describes a task in English, paired with an input in {language} that provides further context. Write a response that appropriately completes the request."
+    else:
+        return f"Below is an instruction that describes a task in English. Write a response that appropriately completes the request."
+
+def get_user_prompt(instruction: str, has_input: bool = False, input_str: str = "") -> str:
+    if has_input:
+        return f" ### Instruction:\n{instruction}\n\n### Input:\n{input_str}\n\n### Response: "
+    else:
+        return f" ### Instruction:\n{instruction}\n\n### Response: "
+    
 def get_input_token_length(tokenizer: AutoTokenizer, system_prompt: str, message: str) -> int:
     prompt = get_prompt(message, system_prompt)
     input_ids = tokenizer([prompt], return_tensors='np', add_special_tokens=False)['input_ids']

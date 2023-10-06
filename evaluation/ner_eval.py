@@ -1,7 +1,7 @@
 import collections
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS
+from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt
 from tqdm import tqdm
 import torch
 import argparse
@@ -96,12 +96,15 @@ def main(model, language):
     targets = [dataset[i]['target'] for i in range(len(dataset))]
     predictions = []
 
-    user_message_suffix = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the passage above written in {language} using $$ as a separator. Note that our given example is in English but you must perform the same on {language} text. Return only the output."
-    system_prompt = "Follow the instructions below and answer to the best of your ability."
+    # user_message_suffix = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the passage above written in {language} using $$ as a separator. Note that our given example is in English but you must perform the same on {language} text. Return only the output."
+    # system_prompt = "Follow the instructions below and answer to the best of your ability."
+    system_prompt = get_sys_prompt(language, True)
+    instruction = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the input passage written in {language} using $$ as a separator."
 
     for i in tqdm(range(len(dataset))):
 
-        user_message = dataset[i]['text'] + "\n\n" + user_message_suffix
+        # user_message = dataset[i]['text'] + "\n\n" + user_message_suffix
+        user_message = get_user_prompt(instruction, True, dataset[i]['text'])
 
         prediction = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message, max_new_tokens=100)

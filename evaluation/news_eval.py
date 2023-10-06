@@ -1,13 +1,13 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS
+from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt
 from tqdm import tqdm
 from sklearn import metrics
 import torch
 import argparse
 import datetime
 
-def generate_user_prompt(sample, labels, include_text=True):
+def generate_user_text(sample, labels, include_text=True):
     headline = f'Headline: {sample["headline"]}'
     text = f'Text: {sample["text"]}'
     categories = "Categories: "
@@ -16,7 +16,7 @@ def generate_user_prompt(sample, labels, include_text=True):
     categories = categories[:-2] + "."
 
     parts = [headline, text, categories] if include_text else [headline, categories]
-    prompt = '\n'.join(parts)
+    prompt = '\t'.join(parts)
     return prompt
 
 
@@ -42,21 +42,24 @@ def main(language, model):
         "sports"
     ]
 
-    system_prompt = f"Given a {language} news article with its headline and text, along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
-    system_prompt_no_text = f"Given a {language} news article with its headline along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
+    # system_prompt = f"Given a {language} news article with its headline and text, along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
+    # system_prompt_no_text = f"Given a {language} news article with its headline along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
+    system_prompt = get_sys_prompt(language, True)
+    instruction = f"Given a {language} news article with its headline and text, along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options. Please only output one category as your response, thank you!"
+    instruction_notext = f"Given a {language} news article with its headline along with a choice of five categories, please provide a one-word response that best categorizes the article. Your input should be the most appropriate category from the provided options.  Please only output one category as your response, thank you!"
 
     accuracy = [[], 0]
     accuracy_no_text = [[], 0]
     references = []
 
     for i in tqdm(range(len(dataset))):
-        user_message = generate_user_prompt(dataset[i], labels)
-        user_message_no_text = generate_user_prompt(dataset[i], labels, False)
+        user_message = get_user_prompt(instruction, True, generate_user_text(dataset[i], labels))
+        user_message_no_text = get_user_prompt(instruction_notext, True, generate_user_text(dataset[i], labels, False))
 
         output = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message, max_new_tokens=40)
         
-        output_no_text = generate_text(model, tokenizer, system_prompt=system_prompt_no_text,
+        output_no_text = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message_no_text, max_new_tokens=40)
 
         prediction, prediction_no_text = [], []

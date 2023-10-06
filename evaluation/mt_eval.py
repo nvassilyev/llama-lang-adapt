@@ -1,6 +1,6 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS
+from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt
 from tqdm import tqdm
 import evaluate
 import torch
@@ -23,12 +23,15 @@ def main(model, language):
 
     english = load_dataset("facebook/flores", "eng_Latn")["devtest"]
     yoruba = load_dataset("facebook/flores", f"{lang}_Latn")["devtest"]
-    system_prompt = f"Translate the following sentence from English to {language}. Provide no justification, please and thank you!"
+    # system_prompt = f"Translate the following sentence from English to {language}. Provide no justification, please and thank you!"
+    system_prompt = get_sys_prompt(language, True)
+    instruction = f"Translate the input English sentence to {language}. Provide no justification, please and thank you!"
 
     predictions, references = [], []
 
     for i in tqdm(range(len(english))):
-        user_message = f"English: {english[i]['sentence']}"
+        # user_message = f"English: {english[i]['sentence']}"
+        user_message = get_user_prompt(instruction, True, english[i]['sentence'])
 
         output = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message, max_new_tokens=300)
