@@ -4,21 +4,34 @@ import torch
 LANGS = {
     "Yoruba": "yor"
 }
+SEED = 42
+NUM_ROWS = 400
 
 if torch.cuda.is_available():
     device = "cuda"
 else:
     device = "cpu"
 
-def get_sys_prompt(language: str, has_input: bool) -> str:
+def get_sys_prompt(language: str, has_input: bool, n_shot: int = 0) -> str:
     if has_input:
-        return f"Below is an instruction that describes a task in English, paired with an input in {language} that provides further context. Write a response that appropriately completes the request."
+        if n_shot == 0:
+            return f"Below is an instruction that describes a task in English, paired with an input in {language} that provides further context. Write a response that appropriately completes the request."
+        else:
+            return f"Below is an instruction that describes a task in English, paired with an input in {language} that provides further context. You are provided also with {n_shot} example inputs and outputs to make the problem clearer. Write a response that appropriately completes the request."
     else:
         return f"Below is an instruction that describes a task in English. Write a response that appropriately completes the request."
 
-def get_user_prompt(instruction: str, has_input: bool = False, input_str: str = "") -> str:
+def get_user_prompt(instruction: str, has_input: bool = False, input_str: str = "", shot_list: list(dict(str, str)) = []) -> str:
+    ### shot_list is a list of examples with two keys, "input" and "output"
     if has_input:
-        return f" ### Instruction:\n{instruction}\n\n### Input:\n{input_str}\n\n### Response: "
+        if len(shot_list) == 0:
+            return f" ### Instruction:\n{instruction}\n\n### Input:\n{input_str}\n\n### Response: "
+        else:
+            resp = f" ### Instruction:\n{instruction}\n\n###Examples:\n"
+            for (i, example) in enumerate(shot_list):
+                resp += f"{str(i)}. #Input: {example['input']}\t #Output: {example['output']}\n"
+            resp += f"\n### Input:\n{input_str}\n\n### Response: "
+            return resp
     else:
         return f" ### Instruction:\n{instruction}\n\n### Response: "
     

@@ -1,14 +1,13 @@
 import collections
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt
+from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt, SEED, NUM_ROWS
 from tqdm import tqdm
 import torch
 import argparse
 import datetime
 
 
-SEED = 42
 
 def span_f1_seqio(targets, predictions):
   """Computes Span based F1 score.
@@ -79,7 +78,7 @@ def span_f1(targets: list[str], predictions: list[str]) -> float:
   return 100 * span_f1_seqio(targets, predictions)["span_f1"]
 
 
-def main(model, language):
+def main(model, language, shots):
     lang = LANGS[language]
     data_path = f"data/{lang}/ner/test.jsonl"
 
@@ -92,8 +91,7 @@ def main(model, language):
 
     dataset = load_dataset("json", data_files={"test": data_path})['test']
     dataset = dataset.shuffle(seed=SEED)
-
-    targets = [dataset[i]['target'] for i in range(len(dataset))]
+    dataset = dataset.select(range(NUM_ROWS))
     predictions = []
 
     # user_message_suffix = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the passage above written in {language} using $$ as a separator. Note that our given example is in English but you must perform the same on {language} text. Return only the output."
@@ -101,16 +99,28 @@ def main(model, language):
     system_prompt = get_sys_prompt(language, True)
     instruction = f"Named entites refers to names of location (LOC), organization (ORG) and personal name (PER). For example, \'David is an employee of Amazon and he is visiting New York next week to see Esther\' will be PER: David $$ ORG: Amazon $$ LOC: New York $$ PER: Esther\n\nList all the named entities in the input passage written in {language} using $$ as a separator."
 
+    examples = []
+    if shots > 0:
+        dataset_ex = dataset.select(range(shots))
+        dataset = dataset.select(range(shots, len(dataset)))
+        for i in range(shots):
+            examples.append({"input": dataset_ex[i]['text'], "output": dataset_ex[i]['target']})
+
+    targets = [dataset[i]['target'] for i in range(len(dataset))]
+
     for i in tqdm(range(len(dataset))):
 
         # user_message = dataset[i]['text'] + "\n\n" + user_message_suffix
-        user_message = get_user_prompt(instruction, True, dataset[i]['text'])
+        user_message = get_user_prompt(instruction, True, dataset[i]['text'], examples)
 
         prediction = generate_text(model, tokenizer, system_prompt=system_prompt,
                 message=user_message, max_new_tokens=100)
+        if i < 3:
+            print(f"Output {i}: {prediction}")
         
         predictions.append(prediction)
 
+    print(f"Number of Evaluations: {len(predictions)}")
     print(f"Accuracy: {span_f1(targets, predictions)}")
 
 
@@ -119,10 +129,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, help="Path to the model file")
     parser.add_argument("--lang", type=str, help="Language")
+    parser.add_argument("--shot", type=int, help="Number of examples to use in n-shot evaluation")
     args = parser.parse_args()
 
-    print(f"Starting NER Evaluation.\nUsed Model Located At: {args.model}\nStart Time: {str(datetime.datetime.now())}")
-    main(model=args.model, language=args.lang)
+    print(f"Starting {args.shot}-Shot NER Evaluation.\nUsed Model Located At: {args.model}\nStart Time: {str(datetime.datetime.now())}")
+    main(model=args.model, language=args.lang, shots=args.shot)
 
     print(f"NER Evaluation Completed. End Time: {str(datetime.datetime.now())}")
     print("-" * 20)

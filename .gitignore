@@ -1,9 +1,14 @@
 ### Large files (datasets, LLMs)
 data/
 models/
+vocab/sp_models/
+vocab/fasttext/
+vocab/dict/
+vocab/embeddings/
 
 ### Python and Transformers (Cache/Libraries)
 env/
+venv/
 __pycache__/
 .cache/
 
