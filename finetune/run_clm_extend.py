@@ -474,7 +474,7 @@ def main():
     if data_args.output_embeddings_dir:
         output_embeddings = torch.from_numpy(np.load(data_args.output_embeddings_dir))
         assert len(tokenizer) - embedding_size == input_embeddings.size()[0]
-        model.get_ouput_embeddings().weight.data[embedding_size:] = output_embeddings
+        model.get_output_embeddings().weight.data[embedding_size:] = output_embeddings
 
 
     # Preprocessing the datasets.

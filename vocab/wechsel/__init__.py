@@ -8,7 +8,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 from pathlib import Path
 import fasttext
-import fasttext.util
 import tempfile
 from datasets import load_dataset
 import nltk

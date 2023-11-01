@@ -1,0 +1,20 @@
+mono_ft.sh - > (parallel_ft.sh or parallel_ft_lora.sh) -> eval_generation.sh
+
+Files to alter:
+
+- parallel_ft.sh and parallel_ft_lora remain unchanged
+- mono_ft:
+	- add embedding initialization strategy -> add to data.args -> add to load_model in utils.py
+- eval_generation.sh:
+	- there is no comet support for Yoruba
+	- add chrf++ evalution
+
+
+
+- Prepare Yor-EN corpus in same format as Oscar
+- Interleave probabilities (run_llmmt.py lines 99-131)
+- prepare MT data in same format
+- Miaoran tokenizer padding issue is handled by load_tokenizer in utils.py script
+- dont have to worry about ul2collator
+- device mappings, deepspeed config
+- make dataset with same loading script as Oscar corpus with language code

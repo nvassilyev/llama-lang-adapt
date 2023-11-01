@@ -5,12 +5,14 @@ vocab/sp_models/
 vocab/fasttext/
 vocab/dict/
 vocab/embeddings/
+vocab/data.pkl
 
 ### Python and Transformers (Cache/Libraries)
 env/
-venv/
+*venv/
 __pycache__/
 .cache/
+ALMA/
 
 ### Config files
 finetune/wandb_config.sh

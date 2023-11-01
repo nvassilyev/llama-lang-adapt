@@ -10,16 +10,15 @@ declare -A language_list=( ["Yoruba"]="yor")
 # )
 
 models=(
-    "/mnt/disk/llama-lang-adapt/models/llama-2-7b-hf"
-    "/mnt/disk/llama-lang-adapt/models/llm-africa/alpaca-v2/yor-inst-prompt"
-    "/mnt/disk/llama-lang-adapt/models/llm-africa/alpaca-v2/yor-inst-prompt-mt"
+    "/mnt/disk/llama-lang-adapt/models/yor-pretrain/default"
+    "/mnt/disk/llama-lang-adapt/models/yor-pretrain/new-tokenizer"
+    "/mnt/disk/llama-lang-adapt/models/yor-pretrain/tokenizer-wechsel"
 )
 
 # Edit the tasks you wish to test. Available tasks are: ner, mt, news, qa, sentiment.
 tasks=(
-    "ner"
-    "news"
-    "sentiment"
+    "mt"
+    "qa"
 )
 
 # Edit which versions of n-shot learning you wish to perform

@@ -1,6 +1,6 @@
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from datasets import load_dataset
-from generate import generate_text, LANGS, get_sys_prompt, get_user_prompt, SEED
+from evaluation.old.generate import generate_text, LANGS, get_sys_prompt, get_user_prompt, SEED
 from tqdm import tqdm
 from sklearn import metrics
 import torch

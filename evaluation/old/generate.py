@@ -1,9 +1,7 @@
 from transformers import GenerationConfig, AutoModelForCausalLM, AutoTokenizer
 import torch
 
-LANGS = {
-    "Yoruba": "yor"
-}
+LANGS = {"Yoruba": "yor", "English": "eng"}
 SEED = 42
 NUM_ROWS = 400
 
@@ -21,7 +19,7 @@ def get_sys_prompt(language: str, has_input: bool, n_shot: int = 0) -> str:
     else:
         return f"Below is an instruction that describes a task in English. Write a response that appropriately completes the request."
 
-def get_user_prompt(instruction: str, has_input: bool = False, input_str: str = "", shot_list: list(dict(str, str)) = []) -> str:
+def get_user_prompt(instruction: str, has_input: bool = False, input_str: str = "", shot_list: list = []) -> str:
     ### shot_list is a list of examples with two keys, "input" and "output"
     if has_input:
         if len(shot_list) == 0:
@@ -63,9 +61,7 @@ def generate_text(
     # https://huggingface.co/docs/transformers/main_classes/text_generation#transformers.GenerationConfig
     
     generation_config = GenerationConfig(
-        temperature=temperature,
-        top_p=top_p,
-        top_k=top_k,
+        ### temperature, top_p, and top_k are not needed since we are using 1 beam
         num_beams=num_beams,
         repetition_penalty=repetition_penalty,
     )
@@ -73,7 +69,7 @@ def generate_text(
     with torch.no_grad():
         generation_output = model.generate(
             input_ids=input_ids,
-            # generation_config=generation_config,
+            generation_config=generation_config,
             return_dict_in_generate=True,
             output_scores=True,
             max_new_tokens=max_new_tokens,
